@@ -4,25 +4,10 @@
 	other require pkgs are list in requirements.txt
 ########## step 2 - self-defined testing variables setup #########
 
-If you want to test the model with pretrained weight,set variable training in ./main.py line 61 to False
-If you want train a new model,set variable training in main.py line 61 to True
+----testing mode------ 
 
-----testing path------ 
+	python main.py --noise_dataroot "你要測試的圖片位置" --name "選擇results中的名字" 	--model_name "使用的模型名稱"
 
-	Set the test dataset path in ./main.py line 17 to your own directory path 	#test dataset input
-	You can change the save path in  ./main.py line 43 or use the default path ./result 	#test dataset output
+----train mode------ 
 
-----testing filename------ 
-
-	You can save result with the original filename or replace with the next line to save result with number,
-	it can change in ./main.py line 57
-
-	
-########## step 3 - self-defined training variables setup #########
-	
-	Set the traing dataset path in ./trainer.py line 21 and 22 in numpy file to your own directory path 	#train dataset input
-	The model weights save in ./weights/cvfsid_v2/ and change change in ./trainer.py line 90 and 92
-
-########## step 4 - run the code #########
-
-python main.py
+	python main.py --noise_dataroot "濕指紋圖片位置" --clean_dataroot  "乾指紋圖片位置"  --batch_size 64	--train 
