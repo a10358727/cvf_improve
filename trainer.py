@@ -8,6 +8,8 @@ from model import CVF_model
 from loss import loss_aug, loss_main,ssim,psnr
 from data import dataset
 from torch.backends import cudnn
+from sklearn.preprocessing import MinMaxScaler
+
 
 mse = nn.MSELoss(reduction='mean') 
 
@@ -27,7 +29,7 @@ def process_image(train_noisy):
     # 计算所有标准差的平均值并返回
     return torch.mean(torch.cat(STD_train, dim=1), dim=1)
 
-def save_image(opt,index,noise_output,clean_output):
+def save_image(opt,index,noise_output,clean_output,noise1,noise2):
 
     result_folder = './results/' + opt.name + '/test/'
     if not os.path.exists(result_folder):
@@ -43,15 +45,19 @@ def save_image(opt,index,noise_output,clean_output):
     cv2.imwrite(result_folder + 'noise/' + str(index) + '.bmp', img.astype(np.uint8))
     img = _save_image(opt,clean_output)
     cv2.imwrite(result_folder + 'clean/' + str(index) + '.bmp', img.astype(np.uint8))
+    img = _save_image(opt,noise1)
+    cv2.imwrite(result_folder + 'clean/' + str(index) + '_noise.bmp', img.astype(np.uint8))
+    img = _save_image(opt,noise2)
+    cv2.imwrite(result_folder + 'clean/' + str(index) + '_noise2.bmp', img.astype(np.uint8))
 
 def _save_image(opt,img):
+    scaler = MinMaxScaler()
     img = img.cpu().detach().numpy()
     img = img[:,:]
-    img = img.reshape(opt.output_h,opt.output_w)
-    img = img  * 255.0
-    img = img.astype('uint8')
+    img = img.reshape(opt.output_h ,opt.output_w )
+    img = scaler.fit_transform(img)
+    img = (img  * 255.0).astype('uint8')
     return img 
-
 def train(opt,model,device,train_dataloader,val_dataloader):
     epoch_num = opt.epochs
     optimizer = torch.optim.Adam(model.parameters(), lr=opt.lr, betas=(0.9, 0.999), eps=1e-08, weight_decay=1e-09, amsgrad=True)
@@ -147,9 +153,17 @@ def test(opt,model,device,test_dataloader):
             noise_val, clear_val = noise_val.float().to(device), clear_val.float().to(device)
             
             noise_w_val, noise_b_val, clean_val = model(noise_val)
+            noise_w_val_1, noise_b_val_1, clean_val_1 = model(clean_val+torch.pow(clean_val,1.) * noise_w_val)
+            noise_w_val_2, noise_b_val_2, clean_val_2 = model((noise_b_val_1))
+            
+            # print(clean_val.shape)
+            # print(noise_w_val_1.shape)
+            # print(noise_b_val_2.shape)
+            
             # clean_val = noise_val
             
-            save_image(opt,index,noise_val,clean_val)
+            # save_image(opt,index,noise_val,clean_val)
+            save_image(opt,index,noise_val,clean_val,noise_w_val_1,noise_b_val_2)
 
             loss_clear_val = mse(clean_val, noise_val)
 
